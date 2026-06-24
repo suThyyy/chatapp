@@ -9,6 +9,7 @@ public enum ErrorCode {
     INTERNAL_SERVER_ERROR(500, "Unknown Exception", HttpStatus.INTERNAL_SERVER_ERROR),
     FORBIDDEN(403, "Access denied", HttpStatus.FORBIDDEN),
     UNAUTHORIZED(401, "Authentication is required", HttpStatus.UNAUTHORIZED),
+    TOKEN_GENERATION_FAILED(500, "Failed to generate JWT token", HttpStatus.INTERNAL_SERVER_ERROR),
 
     USER_EXISTED(400, "User already existed", HttpStatus.BAD_REQUEST),
     USER_NOT_FOUND(404, "User not found", HttpStatus.NOT_FOUND);
