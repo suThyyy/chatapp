@@ -2,7 +2,12 @@ package com.oqnsuthyz.chatapp.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 @Entity
@@ -12,7 +17,8 @@ import java.util.List;
 @Builder
 @Getter
 @Setter
-public class User {
+public class User implements UserDetails {
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
@@ -24,16 +30,49 @@ public class User {
 
     private String password;
 
-    // Tạm thời giữ mối quan hệ Role nếu bạn đã lỡ tạo các class Role và UserHasRole
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     @Builder.Default
     private List<UserHasRole> userHasRoles = new ArrayList<>();
 
-    // Hàm tiện ích để thêm Role (vẫn giữ nguyên)
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        List<Role> roles = this.userHasRoles.stream()
+                .map(UserHasRole::getRole).toList();
+
+        return roles.stream()
+                .map(r -> new SimpleGrantedAuthority(r.getName()))
+                .toList();
+    }
+
     public void addRole(Role role) {
         this.userHasRoles.add(UserHasRole.builder()
                 .user(this)
                 .role(role)
                 .build());
+    }
+
+    @Override
+    public String getUsername() {
+        return this.username;
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return UserDetails.super.isAccountNonExpired();
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return UserDetails.super.isAccountNonLocked();
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return UserDetails.super.isCredentialsNonExpired();
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return UserDetails.super.isEnabled();
     }
 }
