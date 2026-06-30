@@ -2,7 +2,9 @@ package com.oqnsuthyz.chatapp.service;
 
 import com.oqnsuthyz.chatapp.common.ConversationType;
 import com.oqnsuthyz.chatapp.dto.request.CreateConversationRequest;
+import com.oqnsuthyz.chatapp.dto.response.ConversationDetailResponse;
 import com.oqnsuthyz.chatapp.dto.response.CreateConversationResponse;
+import com.oqnsuthyz.chatapp.dto.response.PageResponse;
 import com.oqnsuthyz.chatapp.entity.Conversation;
 import com.oqnsuthyz.chatapp.entity.User;
 import com.oqnsuthyz.chatapp.exception.AppException;
@@ -11,6 +13,10 @@ import com.oqnsuthyz.chatapp.mapper.ConversationMapper;
 import com.oqnsuthyz.chatapp.repository.ConversationRepository;
 import com.oqnsuthyz.chatapp.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -94,5 +100,31 @@ public class ConversationService {
 
         // Map entity sang response DTO
         return ConversationMapper.toConversationResponse(creatorId, conversation);
+    }
+
+    public PageResponse<ConversationDetailResponse> getMyConversation(String userId, int page, int size) {
+        // Tạo Pageable object
+        // page - 1 vì Spring Data JPA dùng 0-based index, nhưng API dùng 1-based
+        Pageable pageable = PageRequest.of(page - 1, size);
+
+        // Query conversations từ database với pagination
+        Page<Conversation> conversationPage = conversationRepository.findAllByUserId(userId, pageable);
+
+        // Lấy danh sách conversations từ Page object
+        List<Conversation> conversations = conversationPage.getContent();
+
+        // Map từng conversation entity sang response DTO
+        List<ConversationDetailResponse> responses = conversations.stream()
+                .map(conversation -> ConversationMapper.toConversationDetailResponse(userId, conversation))
+                .toList();
+
+        // Build PageResponse với thông tin pagination
+        return PageResponse.<ConversationDetailResponse>builder()
+                .currentPage(page) // Trả về page number gốc (1-based)
+                .pageSize(pageable.getPageSize())
+                .totalPages(conversationPage.getTotalPages())
+                .totalElements(conversationPage.getTotalElements())
+                .content(responses)
+                .build();
     }
 }
