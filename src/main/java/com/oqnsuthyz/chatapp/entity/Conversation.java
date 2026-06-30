@@ -45,4 +45,12 @@ public class Conversation {
     private String lastMessageContent;
 
     private LocalDateTime lastMessageTime;
+
+    // Helper method để thêm participant vào conversation
+    public void addParticipants(User user) {
+        participants.add(ConversationParticipant.builder()
+                .conversation(this) // Set relationship với conversation
+                .user(user) // Set relationship với user
+                .build());
+    }
 }
