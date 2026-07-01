@@ -37,7 +37,8 @@ public class SecurityConfig {
             "/swagger-ui.html",
             "/auth/**",
             "/",
-            "/api/v1/**"
+            "/api/v1/**",
+            "/ws/**" // Allow WebSocket endpoint
     };
     private final CustomUserDetailService userDetailService;
     private final CustomJwtDecoder jwtDecoder;
