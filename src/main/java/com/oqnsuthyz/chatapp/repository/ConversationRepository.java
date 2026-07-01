@@ -5,6 +5,7 @@ import com.oqnsuthyz.chatapp.entity.User;
 
 import jakarta.validation.constraints.NotBlank;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -30,9 +31,11 @@ public interface ConversationRepository extends JpaRepository<Conversation, Stri
     // ORDER BY: Sắp xếp theo lastMessageTime giảm dần, conversation có tin nhắn mới
     // nhất lên đầu
     // NULLS LAST: Conversation chưa có tin nhắn (lastMessageTime = null) xuống cuối
-    @EntityGraph(attributePaths = { "participants", "participants.user" })
-    @Query("SELECT DISTINCT c FROM Conversation c JOIN c.participants p WHERE p.user.id = :userId ORDER BY c.lastMessageTime DESC NULLS LAST")
-    Page<Conversation> findAllByUserId(@Param("userId") String userId, Pageable pageable);
+    // @EntityGraph(attributePaths = { "participants", "participants.user" })
+    // @Query("SELECT DISTINCT c FROM Conversation c JOIN c.participants p WHERE
+    // p.user.id = :userId ORDER BY c.lastMessageTime DESC NULLS LAST")
+    // Page<Conversation> findAllByUserId(@Param("userId") String userId, Pageable
+    // pageable);
 
     // Thêm method mới để validate user là member của conversation
     // Query: SELECT c FROM Conversation c
@@ -40,4 +43,16 @@ public interface ConversationRepository extends JpaRepository<Conversation, Stri
     // AND EXISTS (SELECT p FROM c.participants p WHERE p.user.id = :userId)
     @Query("SELECT c FROM Conversation c WHERE c.id = :conversationId AND EXISTS (SELECT p FROM c.participants p WHERE p.user.id = :userId)")
     Optional<Conversation> findByIdAndMember(String conversationId, String userId);
+
+    @Query("SELECT DISTINCT c FROM Conversation c " +
+            "JOIN c.participants p " +
+            "WHERE p.user.id = :userId " +
+            "ORDER BY c.lastMessageTime DESC NULLS LAST")
+    Page<Conversation> findAllByUserId(@Param("userId") String userId, Pageable pageable);
+
+    @Query("SELECT DISTINCT c FROM Conversation c " +
+            "LEFT JOIN FETCH c.participants p " +
+            "LEFT JOIN FETCH p.user " +
+            "WHERE c.id IN :conversationIds")
+    List<Conversation> findByIdInWithParticipants(@Param("conversationIds") List<String> conversationIds);
 }

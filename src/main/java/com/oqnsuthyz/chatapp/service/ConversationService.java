@@ -103,24 +103,28 @@ public class ConversationService {
     }
 
     public PageResponse<ConversationDetailResponse> getMyConversation(String userId, int page, int size) {
-        // Tạo Pageable object
-        // page - 1 vì Spring Data JPA dùng 0-based index, nhưng API dùng 1-based
+        // Step 1: Query conversations với pagination (không fetch collections)
         Pageable pageable = PageRequest.of(page - 1, size);
-
-        // Query conversations từ database với pagination
         Page<Conversation> conversationPage = conversationRepository.findAllByUserId(userId, pageable);
 
-        // Lấy danh sách conversations từ Page object
-        List<Conversation> conversations = conversationPage.getContent();
+        // Step 2: Extract conversation IDs từ paginated results
+        List<String> conversationIds = conversationPage.getContent().stream()
+                .map(Conversation::getId)
+                .toList();
 
-        // Map từng conversation entity sang response DTO
-        List<ConversationDetailResponse> responses = conversations.stream()
+        // Step 3: Fetch collections cho conversations đã được paginate
+        // Empty check để tránh query với empty list
+        List<Conversation> conversationsWithParticipants = conversationIds.isEmpty() ? List.of()
+                : conversationRepository.findByIdInWithParticipants(conversationIds);
+
+        // Step 4: Map sang response DTO
+        List<ConversationDetailResponse> responses = conversationsWithParticipants.stream()
                 .map(conversation -> ConversationMapper.toConversationDetailResponse(userId, conversation))
                 .toList();
 
-        // Build PageResponse với thông tin pagination
+        // Step 5: Build PageResponse
         return PageResponse.<ConversationDetailResponse>builder()
-                .currentPage(page) // Trả về page number gốc (1-based)
+                .currentPage(page)
                 .pageSize(pageable.getPageSize())
                 .totalPages(conversationPage.getTotalPages())
                 .totalElements(conversationPage.getTotalElements())
