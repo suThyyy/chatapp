@@ -1,7 +1,9 @@
 package com.oqnsuthyz.chatapp.config;
 
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
@@ -13,6 +15,7 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 public class WebsocketConfiguration implements WebSocketMessageBrokerConfigurer {
 
     private final WebsocketHandshake websocketHandshake;
+    private final ClientInboundAuthentication clientInboundAuthentication;
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
@@ -37,5 +40,11 @@ public class WebsocketConfiguration implements WebSocketMessageBrokerConfigurer 
         // /user/{username}/queue/xxx → Spring convert thành session-specific
         // destination
         config.setUserDestinationPrefix("/user");
+    }
+
+    @Override
+    public void configureClientInboundChannel(@NonNull ChannelRegistration registration) {
+        // Register ChannelInterceptor để authenticate STOMP CONNECT frames
+        registration.interceptors(clientInboundAuthentication);
     }
 }
