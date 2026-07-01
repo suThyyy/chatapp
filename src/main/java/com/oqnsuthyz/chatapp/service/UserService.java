@@ -2,6 +2,7 @@ package com.oqnsuthyz.chatapp.service;
 
 import com.oqnsuthyz.chatapp.dto.request.CreateUserRequest;
 import com.oqnsuthyz.chatapp.dto.response.CreateUserResponse;
+import com.oqnsuthyz.chatapp.dto.response.UserDetailResponse;
 import com.oqnsuthyz.chatapp.dto.response.UserResponse;
 import com.oqnsuthyz.chatapp.entity.Role;
 import com.oqnsuthyz.chatapp.entity.User;
@@ -68,5 +69,16 @@ public class UserService {
                                                                 .collect(Collectors.toList()))
                                                 .build())
                                 .collect(Collectors.toList());
+        }
+
+        public UserDetailResponse myInfo(String userId) {
+                // Tìm user theo userId từ JWT token
+                return userRepository.findById(userId)
+                                .map(user -> UserDetailResponse.builder()
+                                                .userId(user.getId())
+                                                .email(user.getEmail())
+                                                .username(user.getUsername())
+                                                .build())
+                                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         }
 }

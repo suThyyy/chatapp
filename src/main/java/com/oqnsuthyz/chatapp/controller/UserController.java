@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.oqnsuthyz.chatapp.dto.request.CreateUserRequest;
 import com.oqnsuthyz.chatapp.dto.response.ApiResponse;
 import com.oqnsuthyz.chatapp.dto.response.CreateUserResponse;
+import com.oqnsuthyz.chatapp.dto.response.UserDetailResponse;
 import com.oqnsuthyz.chatapp.dto.response.UserResponse;
 import com.oqnsuthyz.chatapp.service.UserService;
 
@@ -15,6 +16,8 @@ import lombok.RequiredArgsConstructor;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -43,14 +46,29 @@ public class UserController {
                 .build();
     }
 
-    @GetMapping
-    public ApiResponse<List<UserResponse>> getAllUser() {
-        List<UserResponse> users = userService.getAllUser();
+    // @GetMapping
+    // public ApiResponse<List<UserResponse>> getAllUser() {
+    // List<UserResponse> users = userService.getAllUser();
 
-        return ApiResponse.<List<UserResponse>>builder()
-                .message("Get all users sucessfully")
+    // return ApiResponse.<List<UserResponse>>builder()
+    // .message("Get all users sucessfully")
+    // .code(HttpStatus.OK.value())
+    // .data(users)
+    // .build();
+    // }
+
+    @GetMapping
+    public ApiResponse<UserDetailResponse> myInfo(@AuthenticationPrincipal Jwt jwt) {
+        // Extract userId từ JWT token subject
+        var userId = jwt.getSubject();
+
+        // Gọi service để lấy user info
+        var data = userService.myInfo(userId);
+
+        return ApiResponse.<UserDetailResponse>builder()
                 .code(HttpStatus.OK.value())
-                .data(users)
+                .message("User info retrieved successfully")
+                .data(data)
                 .build();
     }
 
