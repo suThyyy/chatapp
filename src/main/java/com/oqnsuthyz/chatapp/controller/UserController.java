@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.oqnsuthyz.chatapp.dto.request.CreateUserRequest;
 import com.oqnsuthyz.chatapp.dto.response.ApiResponse;
 import com.oqnsuthyz.chatapp.dto.response.CreateUserResponse;
+import com.oqnsuthyz.chatapp.dto.response.PageResponse;
 import com.oqnsuthyz.chatapp.dto.response.UserDetailResponse;
 import com.oqnsuthyz.chatapp.dto.response.UserResponse;
 import com.oqnsuthyz.chatapp.service.UserService;
@@ -68,6 +69,20 @@ public class UserController {
         return ApiResponse.<UserDetailResponse>builder()
                 .code(HttpStatus.OK.value())
                 .message("User info retrieved successfully")
+                .data(data)
+                .build();
+    }
+
+    @GetMapping("/search")
+    public ApiResponse<PageResponse<UserDetailResponse>> searchUser(
+            @RequestParam(required = false, defaultValue = "1") int page,
+            @RequestParam(required = false, defaultValue = "5") int size,
+            @RequestParam(required = false) String keyword) {
+        var data = userService.searchUsers(keyword, page, size);
+
+        return ApiResponse.<PageResponse<UserDetailResponse>>builder()
+                .code(HttpStatus.OK.value())
+                .message("Users retrieved successfully")
                 .data(data)
                 .build();
     }

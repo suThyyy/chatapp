@@ -2,6 +2,7 @@ package com.oqnsuthyz.chatapp.service;
 
 import com.oqnsuthyz.chatapp.dto.request.CreateUserRequest;
 import com.oqnsuthyz.chatapp.dto.response.CreateUserResponse;
+import com.oqnsuthyz.chatapp.dto.response.PageResponse;
 import com.oqnsuthyz.chatapp.dto.response.UserDetailResponse;
 import com.oqnsuthyz.chatapp.dto.response.UserResponse;
 import com.oqnsuthyz.chatapp.entity.Role;
@@ -12,6 +13,12 @@ import com.oqnsuthyz.chatapp.repository.RoleRepository;
 import com.oqnsuthyz.chatapp.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -80,5 +87,40 @@ public class UserService {
                                                 .username(user.getUsername())
                                                 .build())
                                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        }
+
+        public PageResponse<UserDetailResponse> searchUsers(String keyword, int page, int size) {
+                // 1. Lấy thông tin current user từ SecurityContext
+                Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+                if (authentication == null)
+                        throw new AppException(ErrorCode.UNAUTHORIZED);
+
+                String userId = authentication.getName();
+
+                // 2. Tạo Pageable object
+                Pageable pageable = PageRequest.of(page - 1, size);
+
+                // 3. Search users từ database
+                Page<User> userPage = userRepository.searchUsers(keyword, pageable);
+
+                // 4. Filter để loại bỏ current user và map sang DTO
+                List<UserDetailResponse> content = userPage.getContent()
+                                .stream()
+                                .filter(user -> !user.getId().equals(userId)) // Loại bỏ current user
+                                .map(user -> UserDetailResponse.builder()
+                                                .userId(user.getId())
+                                                .email(user.getEmail())
+                                                .username(user.getUsername())
+                                                .build())
+                                .toList();
+
+                // 5. Build PageResponse
+                return PageResponse.<UserDetailResponse>builder()
+                                .currentPage(page)
+                                .pageSize(size)
+                                .totalPages(userPage.getTotalPages())
+                                .totalElements(userPage.getTotalElements())
+                                .content(content)
+                                .build();
         }
 }
